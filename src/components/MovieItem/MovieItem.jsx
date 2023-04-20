@@ -1,11 +1,13 @@
 import React from 'react';
 import { Image, Rate, Spin } from 'antd';
-import MovieAppService from '../../services/movieAppService';
 
 import './MovieItem.css';
+import { GenresConsumer } from '../context/genres-context';
 
-const movieService = new MovieAppService();
-const MovieItem = ({ movie: { id, title, poster_path, vote_average, release_date, overview }, guesSessionId }) => {
+const MovieItem = ({
+  movie: { id, title, poster_path, vote_average, release_date, overview, rating, genre_ids },
+  onRated,
+}) => {
   const truncateText = (description, maxLength) => {
     if (description.length <= maxLength) {
       return description;
@@ -22,6 +24,9 @@ const MovieItem = ({ movie: { id, title, poster_path, vote_average, release_date
     }
     return truncated;
   };
+
+  const voteColor =
+    vote_average <= 3 ? '#E90000' : vote_average <= 5 ? '#E97E00' : vote_average <= 7 ? '#E9D100' : '#66E900';
 
   const poster = () => {
     if (poster_path === null) {
@@ -43,30 +48,39 @@ const MovieItem = ({ movie: { id, title, poster_path, vote_average, release_date
   };
 
   return (
-    <li className="movie__item">
-      <div className="movie__poster">{poster()}</div>
-      <div className="movie__content">
-        <div className="movie__content-box">
-          <div className="movie__content-header">
-            <h2 className="movie__title">{title}</h2>
-            <div className="movie__average-rating">{vote_average.toFixed(1)}</div>
-          </div>
-          <div className="movie__date">{release_date}</div>
-          <ul className="movie__category-list">
-            <li className="movie__category-item">Action</li>
-            <li className="movie__category-item">Action</li>
-          </ul>
-          <div className="movie__description">{truncateText(overview, 100)}</div>
-        </div>
-        <Rate
-          count={10}
-          allowHalf
-          onChange={(rate) => {
-            movieService.rateMovie(guesSessionId, id, rate);
-          }}
-        />
-      </div>
-    </li>
+    <GenresConsumer>
+      {(genres) => {
+        const genresList = genre_ids.map((item) => {
+          const { id: genreId, name } = genres.find((el) => el.id === item);
+
+          return (
+            <li key={genreId} className="movie__category-item">
+              <span>{name}</span>
+            </li>
+          );
+        });
+
+        return (
+          <li className="movie__item">
+            <div className="movie__poster">{poster()}</div>
+            <div className="movie__content">
+              <div className="movie__content-box">
+                <div className="movie__content-header">
+                  <h2 className="movie__title">{title}</h2>
+                  <div className="movie__average-rating" style={{ borderColor: voteColor }}>
+                    {vote_average.toFixed(1)}
+                  </div>
+                </div>
+                <div className="movie__date">{release_date}</div>
+                <ul className="movie__category-list">{genresList}</ul>
+                <div className="movie__description">{truncateText(overview, 100)}</div>
+              </div>
+              <Rate count={10} allowHalf defaultValue={rating} onChange={(rate) => onRated(id, rate)} />
+            </div>
+          </li>
+        );
+      }}
+    </GenresConsumer>
   );
 };
 

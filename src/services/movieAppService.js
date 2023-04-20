@@ -1,6 +1,8 @@
 export default class MovieAppService {
   _apiKey = 'd0ca4d53cbe1e576e66a1311b84e919b';
   _apiGuest = `https://api.themoviedb.org/3/authentication/guest_session/new?api_key=${this._apiKey}`;
+  _apiGenres = `
+	https://api.themoviedb.org/3/genre/movie/list?api_key=${this._apiKey}`;
 
   getMovies = async (query, page) => {
     const _apiSearch = `https://api.themoviedb.org/3/search/movie?page=${page}&api_key=${this._apiKey}&query=${query}`;
@@ -9,6 +11,15 @@ export default class MovieAppService {
     const { results, total_results } = movies;
 
     return [results, total_results];
+  };
+
+  getGenres = async () => {
+    const result = await fetch(this._apiGenres);
+    const genresRes = await result.json();
+
+    const { genres } = genresRes;
+
+    return genres;
   };
 
   createGuestSession = async () => {
@@ -30,5 +41,14 @@ export default class MovieAppService {
         value: rate,
       }),
     });
+  };
+
+  getRatedMovies = async (guestSessionId) => {
+    const apiGetRated = `https://api.themoviedb.org/3/guest_session/${guestSessionId}/rated/movies?api_key=${this._apiKey}&sort_by=created_at.asc`;
+    const result = await fetch(apiGetRated);
+    const getRatedMovies = await result.json();
+    const { results } = getRatedMovies;
+
+    return results;
   };
 }
